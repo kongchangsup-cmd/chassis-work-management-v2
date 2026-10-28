@@ -3,8 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+
   <title>샤시설계팀 업무관리 v2</title>
+
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+
   <style>
+    * { box-sizing: border-box; }
+
     body {
       margin: 0;
       min-height: 100vh;
@@ -13,31 +19,144 @@
       justify-content: center;
       background: #f3f6fb;
       font-family: Arial, sans-serif;
+      color: #183153;
     }
+
     .card {
-      width: 340px;
+      width: 390px;
+      max-width: calc(100% - 32px);
       padding: 36px 28px;
       background: white;
       border-radius: 14px;
       box-shadow: 0 6px 24px #00000012;
       text-align: center;
     }
-    h1 { font-size: 23px; color: #183153; }
-    p { color: #64748b; line-height: 1.7; }
+
+    h1 {
+      font-size: 23px;
+      margin: 0 0 12px;
+    }
+
+    .subtitle {
+      font-size: 14px;
+      color: #64748b;
+      margin-bottom: 30px;
+    }
+
+    #googleButton {
+      display: flex;
+      justify-content: center;
+      min-height: 44px;
+    }
+
     .status {
       margin-top: 24px;
       padding: 14px;
       border-radius: 8px;
       background: #eff6ff;
       color: #1d4ed8;
+      font-size: 13px;
+      line-height: 1.6;
+      word-break: break-word;
+    }
+
+    .status.error {
+      background: #fef2f2;
+      color: #b91c1c;
+    }
+
+    .status.success {
+      background: #f0fdf4;
+      color: #15803d;
+    }
+
+    .note {
+      margin-top: 18px;
+      font-size: 12px;
+      color: #94a3b8;
+      line-height: 1.6;
     }
   </style>
 </head>
+
 <body>
   <main class="card">
+
     <h1>샤시설계팀 업무관리</h1>
-    <p>업무관리 시스템 v2</p>
-    <div class="status">Google 로그인 기능 준비 중</div>
+
+    <div class="subtitle">
+      업무관리 시스템 v2
+    </div>
+
+    <div id="googleButton"></div>
+
+    <div id="status" class="status">
+      Google 로그인 준비 중...
+    </div>
+
+    <div class="note">
+      등록된 팀원 계정으로 로그인해 주세요.
+    </div>
+
   </main>
+
+  <script>
+    "use strict";
+
+    const CONFIG = Object.freeze({
+      CLIENT_ID:
+        "493152029207-4sehpuppjit6h7nn0k0pgprd3q3mhfnb1.apps.googleusercontent.com"
+    });
+
+    function setStatus(message, type = "") {
+      const el = document.getElementById("status");
+      el.textContent = message;
+      el.className = "status" + (type ? " " + type : "");
+    }
+
+    function handleGoogleLogin(response) {
+      if (!response || !response.credential) {
+        setStatus("Google 로그인 응답을 받지 못했습니다.", "error");
+        return;
+      }
+
+      // 이번 단계에서는 토큰을 서버로 보내거나 저장하지 않습니다.
+      // 다음 단계에서 Apps Script 서버 검증을 연결합니다.
+      setStatus(
+        "Google 계정 인증에 성공했습니다. 서버의 팀원 확인 기능은 다음 단계에서 연결합니다.",
+        "success"
+      );
+    }
+
+    function initializeGoogleLogin() {
+      if (!window.google ||
+          !google.accounts ||
+          !google.accounts.id) {
+        setStatus("Google 로그인 모듈을 불러오지 못했습니다.", "error");
+        return;
+      }
+
+      google.accounts.id.initialize({
+        client_id: CONFIG.CLIENT_ID,
+        callback: handleGoogleLogin,
+        auto_select: false
+      });
+
+      google.accounts.id.renderButton(
+        document.getElementById("googleButton"),
+        {
+          theme: "outline",
+          size: "large",
+          width: 290,
+          text: "signin_with",
+          shape: "rectangular"
+        }
+      );
+
+      setStatus("Google 계정으로 로그인해 주세요.");
+    }
+
+    window.addEventListener("load", initializeGoogleLogin);
+  </script>
 </body>
 </html>
