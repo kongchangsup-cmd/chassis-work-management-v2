@@ -100,6 +100,25 @@
 
   </main>
 
+  <!--
+    브라우저 fetch() 대신 HTML form POST를 사용합니다.
+    토큰을 URL에 넣지 않고 POST 본문으로 전달합니다.
+  -->
+  <form
+    id="authForm"
+    method="POST"
+    action="https://script.google.com/macros/s/AKfycbzLVBB4xzBqK-eG8ZPiJ7DI0Bz8szOs7cCisSu7MHQNMHELWgtyfQPeJKNlJYtZIOfNgA/exec"
+    accept-charset="UTF-8"
+    style="display:none"
+  >
+    <input
+      type="hidden"
+      id="idToken"
+      name="id_token"
+      autocomplete="off"
+    >
+  </form>
+
   <script>
     "use strict";
 
@@ -107,6 +126,8 @@
       CLIENT_ID:
         "493152029207-4sehpupjit6h7nn0k0pgprd3q3mhfnb1.apps.googleusercontent.com"
     });
+
+    let submitting = false;
 
     function setStatus(message, type = "") {
       const el = document.getElementById("status");
@@ -116,23 +137,46 @@
 
     function handleGoogleLogin(response) {
       if (!response || !response.credential) {
-        setStatus("Google 로그인 응답을 받지 못했습니다.", "error");
+        setStatus(
+          "Google 로그인 응답을 받지 못했습니다.",
+          "error"
+        );
         return;
       }
 
-      // 이번 단계에서는 토큰을 서버로 보내거나 저장하지 않습니다.
-      // 다음 단계에서 Apps Script 서버 검증을 연결합니다.
+      if (submitting) {
+        return;
+      }
+
+      submitting = true;
+
       setStatus(
-        "Google 계정 인증에 성공했습니다. 서버의 팀원 확인 기능은 다음 단계에서 연결합니다.",
+        "Google 로그인에 성공했습니다. 서버에서 팀원 정보를 확인하고 있습니다.",
         "success"
       );
+
+      const tokenField = document.getElementById("idToken");
+      const form = document.getElementById("authForm");
+
+      tokenField.value = response.credential;
+
+      // 브라우저가 Apps Script 인증 결과 화면으로 이동합니다.
+      // Google 토큰은 URL에 포함되지 않습니다.
+      form.submit();
+
+      // POST 전송 이후 페이지가 이동할 때까지
+      // 불필요하게 토큰을 유지하지 않습니다.
+      tokenField.value = "";
     }
 
     function initializeGoogleLogin() {
       if (!window.google ||
           !google.accounts ||
           !google.accounts.id) {
-        setStatus("Google 로그인 모듈을 불러오지 못했습니다.", "error");
+        setStatus(
+          "Google 로그인 모듈을 불러오지 못했습니다.",
+          "error"
+        );
         return;
       }
 
